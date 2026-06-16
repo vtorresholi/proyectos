@@ -221,6 +221,7 @@ export interface DashTicket {
   write_date: string
   close_date: string | null
   sla_deadline: string | null
+  hours_spent: number
 }
 
 export interface DashUser {

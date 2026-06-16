@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import useSWR from 'swr'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge, PriorityDot } from '@/components/ui/Badge'
-import type { DashTicket } from '@/lib/odooModule'
+import { PriorityDot } from '@/components/ui/Badge'
+import type { DashTicket, DashConfig } from '@/lib/odooModule'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -11,50 +12,63 @@ const PRIORITY_LEVEL: Record<string, 'high' | 'med' | 'low'> = {
   '0': 'low', '1': 'med', '2': 'high', '3': 'high',
 }
 
-function TicketRow({ ticket }: { ticket: DashTicket }) {
-  const isClosed = !!ticket.close_date
-  const overdue = ticket.sla_deadline && !isClosed && new Date(ticket.sla_deadline) < new Date()
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function StageSelect({ ticket, stages, onChanged }: {
+  ticket: DashTicket
+  stages: { id: number; name: string }[]
+  onChanged: (id: number, stageId: number, stageName: string) => void
+}) {
+  const [saving, setSaving] = useState(false)
+
+  async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const stageId = Number(e.target.value)
+    const stage = stages.find(s => s.id === stageId)
+    if (!stage) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/odoo/tickets/${ticket.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage_id: stageId }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Error al actualizar')
+      onChanged(ticket.id, stageId, stage.name)
+    } catch {
+      alert('No se pudo actualizar el estado en Odoo')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg p-3 mb-2 hover:border-gray-300 transition-colors">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2 min-w-0">
-          <PriorityDot level={PRIORITY_LEVEL[ticket.priority] ?? 'low'} />
-          <div className="min-w-0">
-            <p className="text-[12px] font-medium text-gray-900 truncate">{ticket.name}</p>
-            <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
-              {ticket.client && <span>{ticket.client.name}</span>}
-              {ticket.team && <span>· {ticket.team.name}</span>}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {ticket.stage && (
-            <Badge label={ticket.stage.name} variant={isClosed ? 'done' : 'active'} />
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50">
-        <span className={`text-[10px] flex items-center gap-1 ${overdue ? 'text-red-600' : 'text-gray-400'}`}>
-          <i className="ti ti-clock text-[11px]" aria-hidden="true" />
-          {ticket.sla_deadline
-            ? `SLA: ${new Date(ticket.sla_deadline).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}`
-            : new Date(ticket.create_date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
-        </span>
-        {ticket.assignee && <Avatar name={ticket.assignee.name} size="sm" />}
-      </div>
-    </div>
+    <select
+      value={ticket.stage?.id ?? ''}
+      onChange={handleChange}
+      disabled={saving}
+      className="text-[11px] border border-gray-200 rounded-md px-1.5 py-1 bg-white text-gray-700 disabled:opacity-50"
+    >
+      {!ticket.stage && <option value="">Sin etapa</option>}
+      {stages.map(s => (
+        <option key={s.id} value={s.id}>{s.name}</option>
+      ))}
+    </select>
   )
 }
 
 export function Tickets() {
-  const { data, error, isLoading } = useSWR('/api/odoo/tickets', fetcher, { refreshInterval: 30000 })
+  const { data, error, isLoading, mutate } = useSWR('/api/odoo/tickets', fetcher, { refreshInterval: 30000 })
+  const { data: configData } = useSWR('/api/odoo/config', fetcher)
 
   if (isLoading) return <div className="p-8 text-sm text-gray-400 text-center">Cargando tickets de Odoo…</div>
   if (error || data?.error) return <div className="p-8 text-sm text-red-500 text-center">Error: {data?.error ?? 'No se pudo conectar con Odoo'}</div>
 
   const tickets: DashTicket[] = data?.tickets ?? []
+  const config: DashConfig | undefined = configData
+  const stages = config?.ticket_stages ?? []
 
   if (tickets.length === 0) {
     return (
@@ -64,38 +78,62 @@ export function Tickets() {
     )
   }
 
-  const open = tickets.filter(t => !t.close_date)
-  const closed = tickets.filter(t => !!t.close_date)
+  function handleStageChanged(id: number, stageId: number, stageName: string) {
+    mutate(
+      (current: { tickets: DashTicket[] } | undefined) => current && {
+        ...current,
+        tickets: current.tickets.map(t => t.id === id ? { ...t, stage: { id: stageId, name: stageName } } : t),
+      },
+      { revalidate: false }
+    )
+  }
 
   return (
-    <div>
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-[11px] text-gray-400 mb-1">Total</div>
-          <div className="text-2xl font-medium text-gray-900">{tickets.length}</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-[11px] text-gray-400 mb-1">Abiertos</div>
-          <div className="text-2xl font-medium text-gray-900">{open.length}</div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="text-[11px] text-gray-400 mb-1">Cerrados</div>
-          <div className="text-2xl font-medium text-gray-900">{closed.length}</div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-[11px] font-medium text-gray-500 mb-2 uppercase tracking-wide">Abiertos</p>
-          {open.length === 0 && <p className="text-[12px] text-gray-400">Sin tickets abiertos</p>}
-          {open.map(t => <TicketRow key={t.id} ticket={t} />)}
-        </div>
-        <div>
-          <p className="text-[11px] font-medium text-gray-500 mb-2 uppercase tracking-wide">Cerrados</p>
-          {closed.length === 0 && <p className="text-[12px] text-gray-400">Sin tickets cerrados</p>}
-          {closed.map(t => <TicketRow key={t.id} ticket={t} />)}
-        </div>
-      </div>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+      <table className="w-full text-[12px]">
+        <thead>
+          <tr className="bg-gray-50 text-gray-400 text-[11px] uppercase tracking-wide">
+            <th className="text-left font-medium px-3 py-2">ID</th>
+            <th className="text-left font-medium px-3 py-2">Ticket</th>
+            <th className="text-left font-medium px-3 py-2">Colaborador</th>
+            <th className="text-left font-medium px-3 py-2">Fecha de creación</th>
+            <th className="text-left font-medium px-3 py-2">Horas registradas</th>
+            <th className="text-left font-medium px-3 py-2">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tickets.map(t => (
+            <tr key={t.id} className="border-t border-gray-50 hover:bg-gray-50/50">
+              <td className="px-3 py-2.5 text-gray-400">#{t.id}</td>
+              <td className="px-3 py-2.5 max-w-xs">
+                <div className="flex items-center gap-1.5">
+                  <PriorityDot level={PRIORITY_LEVEL[t.priority] ?? 'low'} />
+                  <span className="text-gray-900 font-medium truncate">{t.name}</span>
+                </div>
+              </td>
+              <td className="px-3 py-2.5">
+                {t.assignee ? (
+                  <div className="flex items-center gap-1.5">
+                    <Avatar name={t.assignee.name} size="sm" />
+                    <span className="text-gray-600">{t.assignee.name}</span>
+                  </div>
+                ) : (
+                  <span className="text-gray-300">Sin asignar</span>
+                )}
+              </td>
+              <td className="px-3 py-2.5 text-gray-500">{fmtDate(t.create_date)}</td>
+              <td className="px-3 py-2.5 text-gray-500">{t.hours_spent}h</td>
+              <td className="px-3 py-2.5">
+                {stages.length > 0 ? (
+                  <StageSelect ticket={t} stages={stages} onChanged={handleStageChanged} />
+                ) : (
+                  <span className="text-gray-500">{t.stage?.name ?? '—'}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
