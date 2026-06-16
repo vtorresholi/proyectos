@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       limit: 200,
     })
     return NextResponse.json({ tasks })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       description: body.description || false,
     })
     return NextResponse.json({ id })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
     if (vals.user_ids) vals.user_ids = [[6, 0, vals.user_ids]]
     await write('project.task', [id], vals)
     return NextResponse.json({ ok: true })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

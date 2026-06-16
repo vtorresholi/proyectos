@@ -11,7 +11,7 @@ export async function GET() {
       { order: 'name asc', limit: 100 }
     )
     return NextResponse.json({ users })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

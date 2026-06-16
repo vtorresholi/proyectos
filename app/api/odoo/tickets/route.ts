@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
       { order: 'priority desc, create_date desc', limit: 100 }
     )
     return NextResponse.json({ tickets })
-  } catch (err: unknown) {
+  } catch (err) {
     const msg = String(err)
-    if (msg.includes('helpdesk')) {
+    if (msg.includes('helpdesk') || msg.includes('does not exist')) {
       return NextResponse.json({ tickets: [], note: 'Helpdesk module not installed' })
     }
     return NextResponse.json({ error: msg }, { status: 500 })
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       team_id: body.team_id || false,
     })
     return NextResponse.json({ id })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest) {
     const { id, ...vals } = body
     await write('helpdesk.ticket', [id], vals)
     return NextResponse.json({ ok: true })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

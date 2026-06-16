@@ -17,7 +17,7 @@ export async function GET() {
       { order: 'id desc', limit: 50 }
     )
     return NextResponse.json({ projects })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       allocated_hours: body.allocated_hours || 0,
     })
     return NextResponse.json({ id })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest) {
     const { id, ...vals } = body
     await write('project.project', [id], vals)
     return NextResponse.json({ ok: true })
-  } catch (err: unknown) {
+  } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
