@@ -1,5 +1,5 @@
-const BASE = process.env.ODOO_URL!
-const API_KEY = process.env.ODOO_MODULE_API_KEY!
+const BASE = (process.env.ODOO_URL ?? '').replace(/\/$/, '')
+const API_KEY = process.env.ODOO_MODULE_API_KEY ?? ''
 
 async function req<T>(
   path: string,
@@ -7,6 +7,8 @@ async function req<T>(
   body?: unknown,
   params?: Record<string, string>
 ): Promise<T> {
+  if (!BASE) throw new Error('ODOO_URL no está configurado en Vercel')
+  if (!API_KEY) throw new Error('ODOO_MODULE_API_KEY no está configurado en Vercel')
   let url = `${BASE}${path}`
   if (params) {
     const qs = new URLSearchParams(params).toString()
