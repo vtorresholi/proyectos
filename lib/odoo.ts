@@ -2,10 +2,11 @@ const ODOO_URL = process.env.ODOO_URL!
 const ODOO_DB = process.env.ODOO_DB!
 const ODOO_API_KEY = process.env.ODOO_API_KEY!
 const ODOO_LOGIN = process.env.ODOO_LOGIN!
+const ODOO_SESSION_ID = process.env.ODOO_SESSION_ID
 
-let sessionCache: { uid: number; session_id: string } | null = null
+let sessionCache: string | null = ODOO_SESSION_ID ?? null
 
-async function authenticate(): Promise<{ uid: number; session_id: string }> {
+async function getSession(): Promise<string> {
   if (sessionCache) return sessionCache
 
   const res = await fetch(`${ODOO_URL}/web/session/authenticate`, {
@@ -19,15 +20,15 @@ async function authenticate(): Promise<{ uid: number; session_id: string }> {
   })
 
   const data = await res.json()
-  if (!data.result?.uid) throw new Error(`Odoo auth failed: ${JSON.stringify(data.error)}`)
+  if (!data.result?.uid) throw new Error(`Odoo auth failed: ${data.error?.data?.message ?? 'unknown error'}`)
 
   const setCookie = res.headers.get('set-cookie') ?? ''
-  const sessionMatch = setCookie.match(/session_id=([^;]+)/)
-  const session_id = sessionMatch?.[1] ?? ''
+  const match = setCookie.match(/session_id=([^;]+)/)
+  if (!match) throw new Error('No session_id in response')
 
-  sessionCache = { uid: data.result.uid, session_id }
-  setTimeout(() => { sessionCache = null }, 1000 * 60 * 30)
-  return sessionCache
+  sessionCache = match[1]
+  setTimeout(() => { sessionCache = ODOO_SESSION_ID ?? null }, 1000 * 60 * 25)
+  return sessionCache!
 }
 
 export async function odooCall<T>(
@@ -36,13 +37,13 @@ export async function odooCall<T>(
   args: unknown[] = [],
   kwargs: Record<string, unknown> = {}
 ): Promise<T> {
-  const { session_id } = await authenticate()
+  const session = await getSession()
 
   const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Cookie: `session_id=${session_id}`,
+      Cookie: `session_id=${session}`,
     },
     body: JSON.stringify({
       jsonrpc: '2.0',
@@ -52,7 +53,13 @@ export async function odooCall<T>(
   })
 
   const data = await res.json()
-  if (data.error) throw new Error(`Odoo error: ${JSON.stringify(data.error)}`)
+  if (data.error) {
+    if (data.error.data?.message?.includes('session')) {
+      sessionCache = ODOO_SESSION_ID ?? null
+      throw new Error('SESSION_EXPIRED')
+    }
+    throw new Error(`Odoo error: ${data.error.data?.message ?? JSON.stringify(data.error)}`)
+  }
   return data.result as T
 }
 

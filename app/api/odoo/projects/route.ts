@@ -12,7 +12,7 @@ export async function GET() {
   try {
     const projects = await searchRead<OdooProject>(
       'project.project',
-      [['active', '=', true]],
+      [['active', 'in', [true, false]]],
       FIELDS,
       { order: 'id desc', limit: 50 }
     )

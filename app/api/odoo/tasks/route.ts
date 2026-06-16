@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const projectId = searchParams.get('project_id')
-    const domain: unknown[] = [['active', '=', true]]
+    const domain: unknown[] = [['active', 'in', [true, false]]]
     if (projectId) domain.push(['project_id', '=', Number(projectId)])
 
     const tasks = await searchRead<OdooTask>('project.task', domain, FIELDS, {
