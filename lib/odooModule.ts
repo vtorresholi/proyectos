@@ -23,11 +23,11 @@ async function req<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Odoo module ${method} ${path} → ${res.status}: ${text}`)
+  const text = await res.text()
+  if (!res.ok || text.trimStart().startsWith('<')) {
+    throw new Error(`URL:${url} STATUS:${res.status} BODY:${text.slice(0, 120)}`)
   }
-  return res.json() as Promise<T>
+  return JSON.parse(text) as T
 }
 
 // ─── READ ─────────────────────────────────────────────────────────────────────
