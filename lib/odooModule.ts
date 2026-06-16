@@ -25,7 +25,7 @@ async function req<T>(
   })
   const text = await res.text()
   if (!res.ok || text.trimStart().startsWith('<')) {
-    throw new Error(`URL:${url} STATUS:${res.status} BODY:${text.slice(0, 120)}`)
+    throw new Error(`Error de conexión con Odoo (status ${res.status}) en ${path}`)
   }
   return JSON.parse(text) as T
 }

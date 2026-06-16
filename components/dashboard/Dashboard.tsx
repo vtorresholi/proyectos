@@ -5,6 +5,9 @@ import useSWR from 'swr'
 import { Sidebar } from './Sidebar'
 import { Overview } from './Overview'
 import { Kanban } from './Kanban'
+import { Tickets } from './Tickets'
+import { Team } from './Team'
+import { WeeklyReview } from './WeeklyReview'
 import { NewTaskForm } from './NewTaskForm'
 import { NewProjectForm } from './NewProjectForm'
 import { SyncLog } from './SyncLog'
@@ -97,18 +100,9 @@ export function Dashboard() {
             />
           )}
           {view === 'sync' && <SyncLog />}
-          {(view === 'tickets' || view === 'team' || view === 'week') && (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <i className="ti ti-tools text-[32px] mb-3" aria-hidden="true" />
-              <p className="text-[13px]">Vista en construcción — próximamente</p>
-              <button
-                onClick={() => setView('overview')}
-                className="mt-4 text-[12px] text-purple-600 hover:underline"
-              >
-                Volver al overview
-              </button>
-            </div>
-          )}
+          {view === 'tickets' && <Tickets />}
+          {view === 'team' && <Team />}
+          {view === 'week' && <WeeklyReview />}
         </main>
       </div>
     </div>

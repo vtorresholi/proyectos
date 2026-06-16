@@ -4,17 +4,17 @@ import useSWR from 'swr'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import { AvatarGroup } from '@/components/ui/Avatar'
-import type { OdooProject } from '@/lib/types'
+import type { DashProject, DashTask } from '@/lib/odooModule'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-function pct(p: OdooProject) {
-  if (!p.allocated_hours || p.allocated_hours === 0) return 0
+function pct(p: DashProject) {
+  if (!p.allocated_hours) return p.pct_complete ?? 0
   return Math.min(100, Math.round((p.effective_hours / p.allocated_hours) * 100))
 }
 
-function statusFor(p: OdooProject): 'active' | 'review' | 'risk' | 'done' {
-  const s = p.last_update_status
+function statusFor(p: DashProject): 'active' | 'review' | 'risk' | 'done' {
+  const s = p.status
   if (s === 'on_track') return 'active'
   if (s === 'at_risk') return 'risk'
   if (s === 'off_track') return 'risk'
@@ -45,34 +45,34 @@ export function Overview() {
   if (isLoading) return <div className="p-8 text-sm text-gray-400 text-center">Cargando proyectos de Odoo…</div>
   if (error || data?.error) return <div className="p-8 text-sm text-red-500 text-center">Error: {data?.error ?? 'No se pudo conectar con Odoo'}</div>
 
-  const projects: OdooProject[] = data?.projects ?? []
-  const tasks = taskData?.tasks ?? []
-  const totalHrs = projects.reduce((a: number, p: OdooProject) => a + (p.allocated_hours || 0), 0)
-  const usedHrs = projects.reduce((a: number, p: OdooProject) => a + (p.effective_hours || 0), 0)
-  const completedTasks = tasks.filter((t: { kanban_state: string }) => t.kanban_state === 'done').length
+  const projects: DashProject[] = data?.projects ?? []
+  const tasks: DashTask[] = taskData?.tasks ?? []
+  const totalHrs = projects.reduce((a, p) => a + (p.allocated_hours || 0), 0)
+  const usedHrs = projects.reduce((a, p) => a + (p.effective_hours || 0), 0)
+  const completedTasks = tasks.filter(t => t.kanban_state === 'done').length
 
   return (
     <div>
       <div className="grid grid-cols-4 gap-3 mb-5">
-        <MetricCard label="Proyectos activos" value={projects.length} sub={`${projects.filter((p: OdooProject) => statusFor(p) === 'active').length} en track`} subColor="text-teal-600" />
-        <MetricCard label="Tareas totales" value={tasks.length} sub={`${tasks.filter((t: { date_deadline: string | false }) => t.date_deadline && new Date(t.date_deadline) < new Date()).length} vencidas`} subColor="text-amber-600" />
+        <MetricCard label="Proyectos activos" value={projects.length} sub={`${projects.filter(p => statusFor(p) === 'active').length} en track`} subColor="text-teal-600" />
+        <MetricCard label="Tareas totales" value={tasks.length} sub={`${tasks.filter(t => t.is_late).length} vencidas`} subColor="text-amber-600" />
         <MetricCard label="Completadas" value={tasks.length ? `${Math.round((completedTasks / tasks.length) * 100)}%` : '—'} sub={`${completedTasks} de ${tasks.length}`} />
         <MetricCard label="Horas registradas" value={`${Math.round(usedHrs)}h`} sub={`de ${Math.round(totalHrs)}h asignadas`} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {projects.map((p: OdooProject) => {
+        {projects.map(p => {
           const progress = pct(p)
           const status = statusFor(p)
-          const memberNames = p.user_id ? [p.user_id[1]] : []
+          const memberNames = p.members?.length ? p.members.map(m => m.name) : (p.responsible ? [p.responsible.name] : [])
 
           return (
             <div key={p.id} className="bg-white border border-gray-100 rounded-xl p-4">
               <div className="flex items-start justify-between mb-2.5">
                 <div>
                   <p className="text-[13px] font-medium text-gray-900">{p.name}</p>
-                  {p.partner_id && (
-                    <p className="text-[11px] text-gray-400 mt-0.5">Cliente: {p.partner_id[1]}</p>
+                  {p.client && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">Cliente: {p.client.name}</p>
                   )}
                 </div>
                 <Badge label={STATUS_LABEL[status]} variant={status} />
