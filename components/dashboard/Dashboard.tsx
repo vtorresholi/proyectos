@@ -30,6 +30,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 export function Dashboard() {
   const [view, setView] = useState<View>('overview')
   const [toast, setToast] = useState('')
+  const [kanbanFilter, setKanbanFilter] = useState<{ late?: boolean; project_id?: number; user_id?: number }>({})
 
   const { data: projectData, error: projError } = useSWR('/api/odoo/projects', fetcher, { refreshInterval: 60000 })
 
@@ -85,8 +86,10 @@ export function Dashboard() {
         )}
 
         <main className="flex-1 min-h-0 overflow-auto p-5">
-          {view === 'overview' && <Overview />}
-          {view === 'kanban' && <Kanban />}
+          {view === 'overview' && (
+            <Overview onNavToLate={() => { setKanbanFilter({ late: true }); setView('kanban') }} />
+          )}
+          {view === 'kanban' && <Kanban initialFilter={kanbanFilter} />}
           {view === 'new-task' && (
             <NewTaskForm
               onSuccess={() => { setView('kanban'); showToast('Tarea creada y enviada a Odoo 18') }}

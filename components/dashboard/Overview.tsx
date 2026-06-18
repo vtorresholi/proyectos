@@ -187,21 +187,28 @@ function CollaboratorHours() {
 
 // ─── MetricCard ────────────────────────────────────────────────────────────────
 
-function MetricCard({ label, value, sub, subColor }: {
-  label: string; value: string | number; sub?: string; subColor?: string
+function MetricCard({ label, value, sub, subColor, onSubClick }: {
+  label: string; value: string | number; sub?: string; subColor?: string; onSubClick?: () => void
 }) {
   return (
     <div className="bg-gray-50 rounded-lg p-4">
       <div className="text-[11px] text-gray-400 mb-1">{label}</div>
       <div className="text-2xl font-medium text-gray-900">{value}</div>
-      {sub && <div className={`text-[11px] mt-1 ${subColor ?? 'text-gray-400'}`}>{sub}</div>}
+      {sub && (
+        <div
+          className={`text-[11px] mt-1 ${subColor ?? 'text-gray-400'} ${onSubClick ? 'cursor-pointer hover:underline' : ''}`}
+          onClick={onSubClick}
+        >
+          {sub}
+        </div>
+      )}
     </div>
   )
 }
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
 
-export function Overview() {
+export function Overview({ onNavToLate }: { onNavToLate?: () => void }) {
   const { data, error, isLoading } = useSWR('/api/odoo/projects', fetcher, { refreshInterval: 60000 })
   const { data: taskData } = useSWR('/api/odoo/tasks', fetcher, { refreshInterval: 60000 })
 
@@ -238,6 +245,7 @@ export function Overview() {
           value={tasks.length}
           sub={`${tasks.filter(t => t.is_late).length} vencidas`}
           subColor="text-amber-600"
+          onSubClick={tasks.filter(t => t.is_late).length > 0 ? onNavToLate : undefined}
         />
         <MetricCard
           label="Completadas"
