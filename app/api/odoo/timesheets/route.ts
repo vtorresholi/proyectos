@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const data = await getTimesheets({
       project_id: searchParams.get('project_id') ? Number(searchParams.get('project_id')) : undefined,
+      task_id: searchParams.get('task_id') ? Number(searchParams.get('task_id')) : undefined,
       user_id: searchParams.get('user_id') ? Number(searchParams.get('user_id')) : undefined,
       date_from: searchParams.get('date_from') ?? undefined,
       date_to: searchParams.get('date_to') ?? undefined,

@@ -4,16 +4,17 @@ import { useState, useMemo, useEffect } from 'react'
 import useSWR from 'swr'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge, PriorityDot } from '@/components/ui/Badge'
+import { TaskDetail } from './TaskDetail'
 import type { DashTask } from '@/lib/odooModule'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-function TaskCard({ task }: { task: DashTask }) {
+function TaskCard({ task, onClick }: { task: DashTask; onClick: () => void }) {
   const assigneeName = task.assignees?.[0]?.name ?? ''
   const stageName = task.stage?.name ?? ''
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg p-2.5 mb-2 cursor-pointer hover:border-gray-300 transition-colors">
+    <div className="bg-white border border-gray-100 rounded-lg p-2.5 mb-2 cursor-pointer hover:border-gray-300 transition-colors" onClick={onClick}>
       <div className="flex items-center gap-1.5 mb-1.5">
         <PriorityDot level={task.priority === '1' ? 'high' : 'low'} />
         <span className="text-[10px] text-gray-400">{task.project?.name ?? ''}</span>
@@ -48,6 +49,7 @@ interface KanbanFilter {
 export function Kanban({ initialFilter }: { initialFilter?: KanbanFilter }) {
   const { data, error, isLoading } = useSWR('/api/odoo/tasks', fetcher, { refreshInterval: 30000 })
 
+  const [selectedTask, setSelectedTask] = useState<DashTask | null>(null)
   const [onlyLate, setOnlyLate] = useState(initialFilter?.late ?? false)
   const [projectId, setProjectId] = useState<number | null>(initialFilter?.project_id ?? null)
   const [userId, setUserId] = useState<number | null>(initialFilter?.user_id ?? null)
@@ -93,6 +95,8 @@ export function Kanban({ initialFilter }: { initialFilter?: KanbanFilter }) {
   const activeFilters = (onlyLate ? 1 : 0) + (projectId ? 1 : 0) + (userId ? 1 : 0)
 
   return (
+    <>
+    {selectedTask && <TaskDetail task={selectedTask} onClose={() => setSelectedTask(null)} />}
     <div className="flex flex-col gap-3 h-full">
       {/* Filter bar */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -150,11 +154,12 @@ export function Kanban({ initialFilter }: { initialFilter?: KanbanFilter }) {
                 <span className="text-[12px] font-medium text-gray-600">{stage}</span>
                 <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-px rounded-full">{stageTasks.length}</span>
               </div>
-              {stageTasks.map(t => <TaskCard key={t.id} task={t} />)}
+              {stageTasks.map(t => <TaskCard key={t.id} task={t} onClick={() => setSelectedTask(t)} />)}
             </div>
           ))}
         </div>
       )}
     </div>
+    </>
   )
 }
