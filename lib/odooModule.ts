@@ -56,12 +56,13 @@ export const getTickets = (filters?: { stage?: string; team_id?: number; limit?:
 export const getUsers = () =>
   req<{ users: DashUser[] }>('/holi/dashboard/users')
 
-export const getTimesheets = (filters?: { project_id?: number; user_id?: number; date_from?: string; date_to?: string }) =>
+export const getTimesheets = (filters?: { project_id?: number; user_id?: number; date_from?: string; date_to?: string; limit?: number }) =>
   req<{ timesheets: DashTimesheet[]; total: number }>('/holi/dashboard/timesheets', 'GET', undefined, {
     ...(filters?.project_id ? { project_id: String(filters.project_id) } : {}),
     ...(filters?.user_id ? { user_id: String(filters.user_id) } : {}),
     ...(filters?.date_from ? { date_from: filters.date_from } : {}),
     ...(filters?.date_to ? { date_to: filters.date_to } : {}),
+    ...(filters?.limit ? { limit: String(filters.limit) } : {}),
   })
 
 export const getConfig = () =>

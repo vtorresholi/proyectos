@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
       user_id: searchParams.get('user_id') ? Number(searchParams.get('user_id')) : undefined,
       date_from: searchParams.get('date_from') ?? undefined,
       date_to: searchParams.get('date_to') ?? undefined,
+      limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
     })
     return NextResponse.json(data)
   } catch (err) {
