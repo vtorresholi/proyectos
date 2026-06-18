@@ -251,47 +251,6 @@ export function Overview() {
         />
       </div>
 
-      {/* Project cards */}
-      <div className="grid grid-cols-2 gap-3">
-        {projects.map(p => {
-          const progress = pct(p)
-          const status = statusFor(p)
-          const memberNames = p.members?.length
-            ? p.members.map(m => m.name)
-            : p.responsible ? [p.responsible.name] : []
-          return (
-            <div key={p.id} className="bg-white border border-gray-100 rounded-xl p-4">
-              <div className="flex items-start justify-between mb-2.5">
-                <div>
-                  <p className="text-[13px] font-medium text-gray-900">{p.name}</p>
-                  {p.client && <p className="text-[11px] text-gray-400 mt-0.5">Cliente: {p.client.name}</p>}
-                </div>
-                <Badge label={STATUS_LABEL[status]} variant={status} />
-              </div>
-              <ProgressBar pct={progress} showLabel />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-[11px] text-gray-400">
-                  Entrega: {p.date
-                    ? new Date(p.date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
-                    : '—'}
-                </span>
-                <AvatarGroup names={memberNames} />
-              </div>
-              <div className="flex gap-4 mt-3 pt-3 border-t border-gray-50">
-                <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <i className="ti ti-check text-[13px]" aria-hidden="true" />
-                  {p.task_count} tareas
-                </span>
-                <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <i className="ti ti-clock text-[13px]" aria-hidden="true" />
-                  {Math.round(p.effective_hours || 0)}h / {Math.round(p.allocated_hours || 0)}h
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
       {/* Eficiencia + Distribución */}
       <div className="grid grid-cols-2 gap-4">
         {/* Eficiencia de horas */}
@@ -384,6 +343,48 @@ export function Overview() {
 
       {/* Horas por colaborador */}
       <CollaboratorHours />
+
+      {/* Project cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {projects.map(p => {
+          const progress = pct(p)
+          const status = statusFor(p)
+          const memberNames = p.members?.length
+            ? p.members.map(m => m.name)
+            : p.responsible ? [p.responsible.name] : []
+          return (
+            <div key={p.id} className="bg-white border border-gray-100 rounded-xl p-4">
+              <div className="flex items-start justify-between mb-2.5">
+                <div>
+                  <p className="text-[13px] font-medium text-gray-900">{p.name}</p>
+                  {p.client && <p className="text-[11px] text-gray-400 mt-0.5">Cliente: {p.client.name}</p>}
+                </div>
+                <Badge label={STATUS_LABEL[status]} variant={status} />
+              </div>
+              <ProgressBar pct={progress} showLabel />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[11px] text-gray-400">
+                  Entrega: {p.date
+                    ? new Date(p.date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })
+                    : '—'}
+                </span>
+                <AvatarGroup names={memberNames} />
+              </div>
+              <div className="flex gap-4 mt-3 pt-3 border-t border-gray-50">
+                <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <i className="ti ti-check text-[13px]" aria-hidden="true" />
+                  {p.task_count} tareas
+                </span>
+                <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <i className="ti ti-clock text-[13px]" aria-hidden="true" />
+                  {Math.round(p.effective_hours || 0)}h / {Math.round(p.allocated_hours || 0)}h
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
     </div>
   )
 }
