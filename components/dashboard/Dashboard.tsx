@@ -42,7 +42,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="grid h-screen" style={{ gridTemplateColumns: '200px 1fr' }}>
+    <div className="grid h-screen overflow-hidden" style={{ gridTemplateColumns: '200px 1fr' }}>
       <Sidebar
         active={view}
         onNav={setView}
@@ -50,7 +50,7 @@ export function Dashboard() {
         synced={synced}
       />
 
-      <div className="flex flex-col min-w-0 bg-gray-50">
+      <div className="flex flex-col min-w-0 bg-gray-50 h-screen overflow-hidden">
         <header className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-100">
           <h1 className="text-[14px] font-medium text-gray-900">{TITLES[view]}</h1>
           <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function Dashboard() {
           </div>
         )}
 
-        <main className="flex-1 overflow-auto p-5">
+        <main className="flex-1 min-h-0 overflow-auto p-5">
           {view === 'overview' && <Overview />}
           {view === 'kanban' && <Kanban />}
           {view === 'new-task' && (
