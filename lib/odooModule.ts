@@ -195,6 +195,7 @@ export interface DashTask {
   stage: IdName | null
   assignees: { id: number; name: string; email: string }[]
   date_deadline: string | null
+  date_start: string | null
   planned_hours: number
   effective_hours: number
   priority: '0' | '1'

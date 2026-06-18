@@ -101,14 +101,14 @@ export function TaskDetail({ task, onClose }: { task: DashTask; onClose: () => v
                   <div className="text-[13px] text-gray-800">{task.priority === '1' ? '⚑ Alta' : 'Normal'}</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Fecha límite</div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Fecha de inicio</div>
+                  <div className="text-[13px] text-gray-800">{fmtDate(task.date_start)}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Fecha planeada</div>
                   <div className={`text-[13px] ${task.is_late ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
                     {fmtDate(task.date_deadline)}
                   </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Creada</div>
-                  <div className="text-[13px] text-gray-800">{fmtDate(task.create_date)}</div>
                 </div>
               </div>
 
